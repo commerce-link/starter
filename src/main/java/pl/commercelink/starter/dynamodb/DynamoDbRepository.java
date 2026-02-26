@@ -27,6 +27,10 @@ public abstract class DynamoDbRepository<T> {
         dynamoDBMapper.batchSave(entities);
     }
 
+    public void batchDelete(List<T> entities) {
+        dynamoDBMapper.batchDelete(entities);
+    }
+
     public void delete(T entity) {
         if (entity instanceof DeletionProtection) {
             DeletionProtection protectedEntity = (DeletionProtection) entity;
