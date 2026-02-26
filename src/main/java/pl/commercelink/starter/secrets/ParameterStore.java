@@ -1,7 +1,9 @@
 package pl.commercelink.starter.secrets;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.stereotype.Service;
@@ -15,7 +17,7 @@ import java.util.Optional;
 public class ParameterStore {
 
     private final SsmClient ssmClient;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = createObjectMapper();
 
     @Autowired
     public ParameterStore(SsmClient ssmClient) {
@@ -139,6 +141,13 @@ public class ParameterStore {
         } catch (Exception e) {
             throw new RuntimeException("Failed to serialize secret", e);
         }
+    }
+
+    private static ObjectMapper createObjectMapper() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.setSerializationInclusion(JsonInclude.Include.ALWAYS);
+        return objectMapper;
     }
 
     public static class TokenData {

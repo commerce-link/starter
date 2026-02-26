@@ -1,6 +1,8 @@
 package pl.commercelink.starter.secrets;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.*;
@@ -9,7 +11,7 @@ import software.amazon.awssdk.services.secretsmanager.model.*;
 public class SecretsManager {
 
     private final SecretsManagerClient secretsManagerClient;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = createObjectMapper();
 
     public SecretsManager(SecretsManagerClient secretsManagerClient) {
         this.secretsManagerClient = secretsManagerClient;
@@ -94,5 +96,12 @@ public class SecretsManager {
         } catch (Exception e) {
             throw new RuntimeException("Failed to serialize secret", e);
         }
+    }
+
+    private static ObjectMapper createObjectMapper() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.setSerializationInclusion(JsonInclude.Include.ALWAYS);
+        return objectMapper;
     }
 }
