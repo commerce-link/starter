@@ -11,19 +11,21 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
-public class CustomUser implements OAuth2User, OidcUser {
+public record CustomUser(OAuth2User oAuth2User, OAuth2AccessToken accessToken,
+                         Map<String, String> customAttributes) implements OAuth2User, OidcUser {
 
-    private final OAuth2User oAuth2User;
-    private final String storeId;
-    private final OAuth2AccessToken accessToken;
-
-    public CustomUser(OAuth2User oAuth2User, OAuth2AccessToken accessToken, String storeId) {
+    public CustomUser(OAuth2User oAuth2User, OAuth2AccessToken accessToken, Map<String, String> customAttributes) {
         this.oAuth2User = oAuth2User;
         this.accessToken = accessToken;
-        this.storeId = storeId;
+        this.customAttributes = new HashMap<>(customAttributes);
+    }
+
+    public Optional<String> getCustomAttribute(String key) {
+        return Optional.ofNullable(customAttributes.get(key));
     }
 
     @Override
@@ -33,20 +35,16 @@ public class CustomUser implements OAuth2User, OidcUser {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+        Object role = getCustomAttribute("role").orElse(null);
+        if (role != null) {
+            return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role));
+        }
+        return oAuth2User.getAuthorities();
     }
 
     @Override
     public String getName() {
         return oAuth2User.getName();
-    }
-
-    public String getStoreId() {
-        return storeId;
-    }
-
-    public OAuth2AccessToken getAccessToken() {
-        return accessToken;
     }
 
     @Override
