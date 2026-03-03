@@ -125,14 +125,12 @@ public class CustomTokenRefreshFilter extends OncePerRequestFilter {
     }
 
     private OAuth2AuthenticationToken updateAuthInformation(Authentication currentAuth, OAuth2AccessToken accessToken) {
-        if (currentAuth instanceof OAuth2AuthenticationToken) {
-            OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) currentAuth;
-            if (oauthToken.getPrincipal() instanceof CustomUser) {
-                CustomUser oldUser = (CustomUser) oauthToken.getPrincipal();
+        if (currentAuth instanceof OAuth2AuthenticationToken oauthToken) {
+            if (oauthToken.getPrincipal() instanceof CustomUser oldUser) {
                 CustomUser newUser = new CustomUser(
                         oldUser,
                         accessToken,
-                        oldUser.getStoreId()
+                        oldUser.customAttributes()
                 );
                 return new OAuth2AuthenticationToken(
                         newUser,
