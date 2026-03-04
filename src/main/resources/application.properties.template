@@ -10,3 +10,4 @@ spring.security.oauth2.client.registration.cognito.client-secret=
 spring.security.oauth2.client.provider.cognito.issuer-uri=
 spring.security.oauth2.client.registration.cognito.redirect-uri=
 cognito.domain=
+cognito.logout.redirect-uri=
