@@ -35,6 +35,9 @@ public class CustomLogoutSuccessHandler implements LogoutSuccessHandler {
     @Value("${cognito.domain}")
     private String cognitoDomain;
 
+    @Value("${cognito.logout.redirect-uri:}")
+    private String logoutRedirectUri;
+
     private final OAuth2AuthorizedClientService authorizedClientService;
 
     private final SecretsManager secretsManager;
@@ -64,6 +67,9 @@ public class CustomLogoutSuccessHandler implements LogoutSuccessHandler {
 
             String cognitoLogoutUrl = cognitoDomain + "/logout"
                     + "?client_id=" + clientId;
+            if (StringUtils.isNotBlank(logoutRedirectUri)) {
+                cognitoLogoutUrl += "&logout_uri=" + logoutRedirectUri;
+            }
 
             response.sendRedirect(cognitoLogoutUrl);
         }
