@@ -73,6 +73,21 @@ public class SecretsManager {
         return fromJson(getSecret(secretName), valueType);
     }
 
+    public void deleteSecret(String secretName) {
+        DeleteSecretRequest request = DeleteSecretRequest.builder()
+                .secretId(secretName)
+                .forceDeleteWithoutRecovery(true)
+                .build();
+
+        try {
+            secretsManagerClient.deleteSecret(request);
+        } catch (ResourceNotFoundException e) {
+            // already deleted
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to delete secret: " + secretName, e);
+        }
+    }
+
     public boolean exists(String secretName){
         try {
             getSecret(secretName);

@@ -119,6 +119,24 @@ public class ParameterStore {
         }
     }
 
+    public void deleteParameter(String key, String name) {
+        String parameterName = createParamName(key, name);
+        try {
+            ssmClient.deleteParameter(DeleteParameterRequest.builder().name(parameterName).build());
+        } catch (ParameterNotFoundException e) {
+            // already deleted
+        }
+    }
+
+    public void deleteParameter(String key, String name, String type) {
+        String parameterName = createParamName(key, name, type);
+        try {
+            ssmClient.deleteParameter(DeleteParameterRequest.builder().name(parameterName).build());
+        } catch (ParameterNotFoundException e) {
+            // already deleted
+        }
+    }
+
     private String createParamName(String key, String name) {
         return "/" + key + "/" + name;
     }
