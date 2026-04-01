@@ -38,6 +38,9 @@ public class CustomLogoutSuccessHandler implements LogoutSuccessHandler {
     @Value("${cognito.logout.redirect-uri:}")
     private String logoutRedirectUri;
 
+    @Value("${cognito.client-secret-name:cognito-client-secret}")
+    private String clientSecretName;
+
     private final OAuth2AuthorizedClientService authorizedClientService;
 
     private final SecretsManager secretsManager;
@@ -91,7 +94,7 @@ public class CustomLogoutSuccessHandler implements LogoutSuccessHandler {
 
     private String getClientSecret() {
         if (env.equals("prod")) {
-            return secretsManager.getSecret("cognito-client-secret");
+            return secretsManager.getSecret(clientSecretName);
         }
         return environmentProperty.getProperty("spring.security.oauth2.client.registration.cognito.client-secret");
     }
