@@ -30,6 +30,9 @@ public class CognitoOAuthConfig {
     @Value("${spring.security.oauth2.client.registration.cognito.redirect-uri}")
     private String redirectUri;
 
+    @Value("${cognito.client-secret-name:cognito-client-secret}")
+    private String clientSecretName;
+
     @Autowired
     private SecretsManager secretsManager;
 
@@ -56,7 +59,7 @@ public class CognitoOAuthConfig {
 
     private String getClientSecret() {
         if (env.equals("prod")) {
-            return secretsManager.getSecret("cognito-client-secret");
+            return secretsManager.getSecret(clientSecretName);
         }
         return environmentProperty.getProperty("spring.security.oauth2.client.registration.cognito.client-secret");
     }
