@@ -11,6 +11,7 @@ import org.springframework.security.oauth2.client.registration.InMemoryClientReg
 import pl.commercelink.starter.secrets.SecretsManager;
 
 import static org.springframework.security.oauth2.core.AuthorizationGrantType.AUTHORIZATION_CODE;
+import static org.springframework.security.oauth2.core.ClientAuthenticationMethod.CLIENT_SECRET_POST;
 
 @Configuration
 public class CognitoOAuthConfig {
@@ -44,6 +45,7 @@ public class CognitoOAuthConfig {
         ClientRegistration cognitoRegistration = ClientRegistration.withRegistrationId("cognito")
                 .clientId(clientId)
                 .clientSecret(getClientSecret())
+                .clientAuthenticationMethod(CLIENT_SECRET_POST)
                 .authorizationUri(cognitoDomain + "/oauth2/authorize")
                 .tokenUri(cognitoDomain + "/oauth2/token")
                 .userInfoUri(cognitoDomain + "/oauth2/userInfo")
