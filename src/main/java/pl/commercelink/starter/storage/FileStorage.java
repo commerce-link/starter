@@ -67,6 +67,12 @@ public class FileStorage {
                 .orElse(null);
     }
 
+    public Optional<String> findNewestFileName(String bucketName, String prefix) {
+        ListObjectsV2Response listObjects = listObjects(bucketName, prefix);
+        return findNewest(listObjects)
+                .map(s3Object -> Paths.get(s3Object.key()).getFileName().toString());
+    }
+
     public List<Pair<String, String>> findTopN(String bucketName, String prefix,int n) {
         ListObjectsV2Response listObjects = listObjects(bucketName, prefix);
 
