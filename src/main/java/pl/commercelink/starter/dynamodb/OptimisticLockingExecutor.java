@@ -6,6 +6,8 @@ import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 
+import pl.commercelink.starter.autoconfigure.OptimisticLockingProperties;
+
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -13,12 +15,21 @@ import java.util.function.Supplier;
 @Component
 public class OptimisticLockingExecutor {
 
-    private static final int MAX_ATTEMPTS = 3;
+    private final OptimisticLockingProperties properties;
+
+    public OptimisticLockingExecutor(OptimisticLockingProperties properties) {
+        this.properties = properties;
+    }
 
     @Retryable(
             retryFor = ConditionalCheckFailedException.class,
-            maxAttempts = MAX_ATTEMPTS,
-            backoff = @Backoff(delay = 50, multiplier = 2, maxDelay = 200, random = true)
+            maxAttemptsExpression = "#{@optimisticLockingProperties.maxAttempts}",
+            backoff = @Backoff(
+                    delayExpression = "#{@optimisticLockingProperties.delay}",
+                    multiplierExpression = "#{@optimisticLockingProperties.multiplier}",
+                    maxDelayExpression = "#{@optimisticLockingProperties.maxDelay}",
+                    randomExpression = "#{@optimisticLockingProperties.random}"
+            )
     )
     public <T> T modifyAndSave(Supplier<T> loader, Consumer<T> mutator, Consumer<T> saver) {
         T entity = loader.get();
@@ -29,8 +40,13 @@ public class OptimisticLockingExecutor {
 
     @Retryable(
             retryFor = ConditionalCheckFailedException.class,
-            maxAttempts = MAX_ATTEMPTS,
-            backoff = @Backoff(delay = 50, multiplier = 2, maxDelay = 200, random = true)
+            maxAttemptsExpression = "#{@optimisticLockingProperties.maxAttempts}",
+            backoff = @Backoff(
+                    delayExpression = "#{@optimisticLockingProperties.delay}",
+                    multiplierExpression = "#{@optimisticLockingProperties.multiplier}",
+                    maxDelayExpression = "#{@optimisticLockingProperties.maxDelay}",
+                    randomExpression = "#{@optimisticLockingProperties.random}"
+            )
     )
     public <T, R> R modifyAndSaveReturning(Supplier<T> loader, Function<T, R> mutator, Consumer<T> saver) {
         T entity = loader.get();
@@ -42,12 +58,12 @@ public class OptimisticLockingExecutor {
     @Recover
     public <T> T recoverModifyAndSave(ConditionalCheckFailedException e,
                                       Supplier<T> loader, Consumer<T> mutator, Consumer<T> saver) {
-        throw new OptimisticLockingExhaustedException(MAX_ATTEMPTS, e);
+        throw new OptimisticLockingExhaustedException(properties.getMaxAttempts(), e);
     }
 
     @Recover
     public <T, R> R recoverModifyAndSaveReturning(ConditionalCheckFailedException e,
                                                   Supplier<T> loader, Function<T, R> mutator, Consumer<T> saver) {
-        throw new OptimisticLockingExhaustedException(MAX_ATTEMPTS, e);
+        throw new OptimisticLockingExhaustedException(properties.getMaxAttempts(), e);
     }
 }
