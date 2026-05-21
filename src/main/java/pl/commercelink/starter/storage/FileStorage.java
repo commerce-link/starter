@@ -12,6 +12,7 @@ import software.amazon.awssdk.services.s3.model.*;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -112,6 +113,18 @@ public class FileStorage {
             readers.add(new InputStreamReader(response));
         }
         return readers;
+    }
+
+    public Optional<Instant> findLastModified(String bucketName, String key) {
+        try {
+            HeadObjectResponse response = s3Client.headObject(HeadObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(key)
+                    .build());
+            return Optional.of(response.lastModified());
+        } catch (NoSuchKeyException e) {
+            return Optional.empty();
+        }
     }
 
     public boolean canRead(String bucketName, String key) {
