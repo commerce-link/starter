@@ -1,5 +1,6 @@
 package pl.commercelink.starter.localization;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Component;
@@ -7,12 +8,9 @@ import org.springframework.stereotype.Component;
 import java.util.Locale;
 
 @Component
+@RequiredArgsConstructor
 class MessageSourceEnumLocalizer implements EnumLocalizer {
     private final MessageSource messageSource;
-
-    MessageSourceEnumLocalizer(MessageSource messageSource) {
-        this.messageSource = messageSource;
-    }
 
     @Override
     public String localize(Enum<?> value) {
