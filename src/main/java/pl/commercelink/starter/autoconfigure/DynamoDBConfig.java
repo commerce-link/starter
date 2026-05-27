@@ -17,13 +17,16 @@ public class DynamoDBConfig {
     @Value("${application.env}")
     private String env;
 
+    @Value("${amazon.aws.dynamodb.localEndpoint:http://localhost:8000}")
+    private String dynamodbLocalEndpoint;
+
     @Bean
     public AmazonDynamoDB amazonDynamoDB() {
         AmazonDynamoDBClientBuilder standard = AmazonDynamoDBClientBuilder.standard();
         if (env != null && env.equals("prod")) {
             standard.withRegion(amazonAWSRegion);
         } else {
-            standard.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration("http://localhost:8000", "eu-central-1"));
+            standard.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(dynamodbLocalEndpoint, "eu-central-1"));
         }
         return standard.build();
     }
