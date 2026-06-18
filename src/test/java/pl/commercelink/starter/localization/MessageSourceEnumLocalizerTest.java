@@ -63,4 +63,45 @@ class MessageSourceEnumLocalizerTest {
             LocaleContextHolder.resetLocaleContext();
         }
     }
+
+    @Test
+    void localizesEnumWithSuffix() {
+        MessageSource source = mock(MessageSource.class);
+        Locale polish = Locale.forLanguageTag("pl");
+        when(source.getMessage("SampleEnum.Foo.singular", null, "Foo", polish))
+                .thenReturn("Pojedynczy");
+
+        MessageSourceEnumLocalizer localizer = new MessageSourceEnumLocalizer(source);
+
+        assertEquals("Pojedynczy", localizer.localize(SampleEnum.Foo, "singular", polish));
+    }
+
+    @Test
+    void nullSuffixBehavesAsNoSuffix() {
+        MessageSource source = mock(MessageSource.class);
+        Locale polish = Locale.forLanguageTag("pl");
+        when(source.getMessage("SampleEnum.Foo", null, "Foo", polish)).thenReturn("Pierwszy");
+
+        MessageSourceEnumLocalizer localizer = new MessageSourceEnumLocalizer(source);
+
+        assertEquals("Pierwszy", localizer.localize(SampleEnum.Foo, null, polish));
+        assertEquals("Pierwszy", localizer.localize(SampleEnum.Foo, "", polish));
+    }
+
+    @Test
+    void suffixOverloadUsesLocaleContextHolderWhenLocaleNotProvided() {
+        Locale english = Locale.forLanguageTag("en");
+        LocaleContextHolder.setLocale(english);
+        try {
+            MessageSource source = mock(MessageSource.class);
+            when(source.getMessage(eq("SampleEnum.Bar.plural"), any(), eq("Bar"), eq(english)))
+                    .thenReturn("Many");
+
+            MessageSourceEnumLocalizer localizer = new MessageSourceEnumLocalizer(source);
+
+            assertEquals("Many", localizer.localize(SampleEnum.Bar, "plural"));
+        } finally {
+            LocaleContextHolder.resetLocaleContext();
+        }
+    }
 }

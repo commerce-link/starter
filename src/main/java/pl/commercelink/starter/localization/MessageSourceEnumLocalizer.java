@@ -14,13 +14,24 @@ class MessageSourceEnumLocalizer implements EnumLocalizer {
 
     @Override
     public String localize(Enum<?> value) {
-        return localize(value, LocaleContextHolder.getLocale());
+        return localize(value, null, LocaleContextHolder.getLocale());
     }
 
     @Override
     public String localize(Enum<?> value, Locale locale) {
+        return localize(value, null, locale);
+    }
+
+    @Override
+    public String localize(Enum<?> value, String suffix) {
+        return localize(value, suffix, LocaleContextHolder.getLocale());
+    }
+
+    @Override
+    public String localize(Enum<?> value, String suffix, Locale locale) {
         if (value == null) return "";
         String key = value.getClass().getSimpleName() + "." + value.name();
+        if (suffix != null && !suffix.isEmpty()) key += "." + suffix;
         return messageSource.getMessage(key, null, value.name(), locale);
     }
 }
