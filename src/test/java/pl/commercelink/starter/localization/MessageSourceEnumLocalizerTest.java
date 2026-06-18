@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.context.support.StaticMessageSource;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Locale;
 
@@ -103,5 +104,53 @@ class MessageSourceEnumLocalizerTest {
         } finally {
             LocaleContextHolder.resetLocaleContext();
         }
+    }
+
+    @Test
+    void fallbackAppliedWhenLocaleIsNullAndFallbackConfigured() {
+        Locale polish = Locale.forLanguageTag("pl");
+        MessageSource source = mock(MessageSource.class);
+        when(source.getMessage("SampleEnum.Foo", null, "Foo", polish)).thenReturn("Pierwszy");
+
+        MessageSourceEnumLocalizer localizer = new MessageSourceEnumLocalizer(source);
+        ReflectionTestUtils.setField(localizer, "fallbackLocale", polish);
+
+        assertEquals("Pierwszy", localizer.localize(SampleEnum.Foo, (Locale) null));
+    }
+
+    @Test
+    void fallbackAppliedWhenLocaleEqualsJvmDefaultAndFallbackConfigured() {
+        Locale polish = Locale.forLanguageTag("pl");
+        MessageSource source = mock(MessageSource.class);
+        when(source.getMessage("SampleEnum.Foo", null, "Foo", polish)).thenReturn("Pierwszy");
+
+        MessageSourceEnumLocalizer localizer = new MessageSourceEnumLocalizer(source);
+        ReflectionTestUtils.setField(localizer, "fallbackLocale", polish);
+
+        assertEquals("Pierwszy", localizer.localize(SampleEnum.Foo, Locale.getDefault()));
+    }
+
+    @Test
+    void explicitNonDefaultLocaleWinsOverFallback() {
+        Locale polish = Locale.forLanguageTag("pl");
+        Locale english = Locale.forLanguageTag("en");
+        MessageSource source = mock(MessageSource.class);
+        when(source.getMessage("SampleEnum.Foo", null, "Foo", english)).thenReturn("First");
+
+        MessageSourceEnumLocalizer localizer = new MessageSourceEnumLocalizer(source);
+        ReflectionTestUtils.setField(localizer, "fallbackLocale", polish);
+
+        assertEquals("First", localizer.localize(SampleEnum.Foo, english));
+    }
+
+    @Test
+    void fallbackNotAppliedWhenNotConfigured() {
+        MessageSource source = mock(MessageSource.class);
+        Locale jvmDefault = Locale.getDefault();
+        when(source.getMessage("SampleEnum.Foo", null, "Foo", jvmDefault)).thenReturn("FromDefault");
+
+        MessageSourceEnumLocalizer localizer = new MessageSourceEnumLocalizer(source);
+
+        assertEquals("FromDefault", localizer.localize(SampleEnum.Foo, jvmDefault));
     }
 }
