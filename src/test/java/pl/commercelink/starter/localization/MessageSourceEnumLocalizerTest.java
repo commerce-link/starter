@@ -117,14 +117,15 @@ class MessageSourceEnumLocalizerTest {
     }
 
     @Test
-    void fallbackAppliedWhenLocaleEqualsJvmDefaultAndFallbackConfigured() {
+    void explicitLocaleWinsOverFallbackEvenWhenEqualToJvmDefault() {
         Locale polish = Locale.forLanguageTag("pl");
+        Locale jvmDefault = Locale.getDefault();
         MessageSource source = mock(MessageSource.class);
-        when(source.getMessage("SampleEnum.Foo", null, "Foo", polish)).thenReturn("Pierwszy");
+        when(source.getMessage("SampleEnum.Foo", null, "Foo", jvmDefault)).thenReturn("FromDefault");
 
         MessageSourceEnumLocalizer localizer = new MessageSourceEnumLocalizer(source, polish);
 
-        assertEquals("Pierwszy", localizer.localize(SampleEnum.Foo, Locale.getDefault()));
+        assertEquals("FromDefault", localizer.localize(SampleEnum.Foo, jvmDefault));
     }
 
     @Test
@@ -137,6 +138,35 @@ class MessageSourceEnumLocalizerTest {
         MessageSourceEnumLocalizer localizer = new MessageSourceEnumLocalizer(source, polish);
 
         assertEquals("First", localizer.localize(SampleEnum.Foo, english));
+    }
+
+    @Test
+    void fallbackAppliedWhenNoLocaleContextAndFallbackConfigured() {
+        LocaleContextHolder.resetLocaleContext();
+        Locale polish = Locale.forLanguageTag("pl");
+        MessageSource source = mock(MessageSource.class);
+        when(source.getMessage("SampleEnum.Foo", null, "Foo", polish)).thenReturn("Pierwszy");
+
+        MessageSourceEnumLocalizer localizer = new MessageSourceEnumLocalizer(source, polish);
+
+        assertEquals("Pierwszy", localizer.localize(SampleEnum.Foo));
+    }
+
+    @Test
+    void noArgOverloadUsesContextLocaleWhenContextSet() {
+        Locale english = Locale.forLanguageTag("en");
+        Locale polish = Locale.forLanguageTag("pl");
+        LocaleContextHolder.setLocale(english);
+        try {
+            MessageSource source = mock(MessageSource.class);
+            when(source.getMessage("SampleEnum.Foo", null, "Foo", english)).thenReturn("First");
+
+            MessageSourceEnumLocalizer localizer = new MessageSourceEnumLocalizer(source, polish);
+
+            assertEquals("First", localizer.localize(SampleEnum.Foo));
+        } finally {
+            LocaleContextHolder.resetLocaleContext();
+        }
     }
 
     @Test
