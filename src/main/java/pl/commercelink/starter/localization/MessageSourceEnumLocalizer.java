@@ -22,7 +22,7 @@ class MessageSourceEnumLocalizer implements EnumLocalizer {
 
     @Override
     public String localize(Enum<?> value) {
-        return localize(value, null, LocaleContextHolder.getLocale());
+        return localize(value, null, contextLocale());
     }
 
     @Override
@@ -32,7 +32,7 @@ class MessageSourceEnumLocalizer implements EnumLocalizer {
 
     @Override
     public String localize(Enum<?> value, String suffix) {
-        return localize(value, suffix, LocaleContextHolder.getLocale());
+        return localize(value, suffix, contextLocale());
     }
 
     @Override
@@ -43,9 +43,14 @@ class MessageSourceEnumLocalizer implements EnumLocalizer {
         return messageSource.getMessage(key, null, value.name(), resolveLocale(locale));
     }
 
+    private Locale contextLocale() {
+        return LocaleContextHolder.getLocaleContext() != null
+                ? LocaleContextHolder.getLocale()
+                : null;
+    }
+
     private Locale resolveLocale(Locale locale) {
-        if (fallbackLocale == null) return locale;
-        if (locale == null || locale == Locale.getDefault()) return fallbackLocale;
-        return locale;
+        if (locale != null) return locale;
+        return fallbackLocale != null ? fallbackLocale : Locale.getDefault();
     }
 }
