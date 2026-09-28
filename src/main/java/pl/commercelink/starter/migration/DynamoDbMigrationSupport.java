@@ -13,6 +13,8 @@ import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.util.TableUtils;
+import com.amazonaws.services.dynamodbv2.util.TableUtils.TableNeverTransitionedToStateException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -26,29 +28,64 @@ import org.slf4j.LoggerFactory;
  * Shared helpers for DynamoDB schema changes (e.g. Mongock change units) using AWS
  * SDK for Java v1 ({@link AmazonDynamoDB}).
  *
- <p>
- * {@link #createTableIfAbsent(AmazonDynamoDB, CreateTableRequest)} is
- * idempotent: if the table
- * already exists, the call completes without error.
+ * <p>
+ * {@link #createTableIfAbsent(AmazonDynamoDB, CreateTableRequest)} is idempotent: if the table
+ * already exists, the call completes without error. It returns only once the table is
+ * {@code ACTIVE}, so a change unit that runs later in the same start can read, write or
+ * reconfigure the table straight away. On AWS a fresh table stays {@code CREATING} for a few
+ * seconds and any operation on it fails until then; DynamoDB Local creates tables instantly.
  */
 public final class DynamoDbMigrationSupport {
 
     private static final Logger log = LoggerFactory.getLogger(DynamoDbMigrationSupport.class);
 
+    /** How long {@link #createTableIfAbsent(AmazonDynamoDB, CreateTableRequest)} waits for {@code ACTIVE}. */
+    public static final int DEFAULT_ACTIVE_TIMEOUT_MILLIS = 5 * 60 * 1000;
+
+    /** How often the table status is polled while waiting; never slept when the table is already active. */
+    public static final int DEFAULT_ACTIVE_POLL_MILLIS = 1000;
+
     private DynamoDbMigrationSupport() {
     }
 
     /**
-     * Creates the table described by {@code request} if it does not already exist.
-     * Safe to call
-     * repeatedly for the same table name.
+     * Creates the table described by {@code request} if it does not already exist and waits until it is
+     * {@code ACTIVE} (at most {@link #DEFAULT_ACTIVE_TIMEOUT_MILLIS}). Safe to call repeatedly for the same
+     * table name.
+     *
+     * @throws TableNeverTransitionedToStateException when the table is still not active after the timeout
      */
     public static void createTableIfAbsent(AmazonDynamoDB dynamoDb, CreateTableRequest request) {
+        createTableIfAbsent(dynamoDb, request, DEFAULT_ACTIVE_TIMEOUT_MILLIS, DEFAULT_ACTIVE_POLL_MILLIS);
+    }
+
+    /**
+     * Same as {@link #createTableIfAbsent(AmazonDynamoDB, CreateTableRequest)} with an explicit wait budget.
+     */
+    public static void createTableIfAbsent(AmazonDynamoDB dynamoDb, CreateTableRequest request,
+                                           int activeTimeoutMillis, int activePollMillis) {
         try {
             dynamoDb.createTable(request);
             log.info("Created DynamoDB table: {}", request.getTableName());
         } catch (ResourceInUseException e) {
             log.info("DynamoDB table already exists, skipping: {}", request.getTableName());
+        }
+        waitUntilActive(dynamoDb, request.getTableName(), activeTimeoutMillis, activePollMillis);
+    }
+
+    /**
+     * Blocks until {@code tableName} reports status {@code ACTIVE}. Returns immediately when it already is;
+     * a table not yet visible to {@code DescribeTable} (eventual consistency right after creation) is treated
+     * as still being created.
+     *
+     * @throws TableNeverTransitionedToStateException when the table is still not active after the timeout
+     */
+    public static void waitUntilActive(AmazonDynamoDB dynamoDb, String tableName, int timeoutMillis, int pollMillis) {
+        try {
+            TableUtils.waitUntilActive(dynamoDb, tableName, timeoutMillis, pollMillis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while waiting for DynamoDB table " + tableName + " to become active", e);
         }
     }
 
