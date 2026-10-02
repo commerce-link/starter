@@ -49,7 +49,13 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
         if (accept.stream().noneMatch(value -> value.contains("text/html"))) {
             return false;
         }
-        String host = URI.create(saved.getRedirectUrl()).getHost();
+        String host;
+        try {
+            host = URI.create(saved.getRedirectUrl()).getHost();
+        } catch (IllegalArgumentException e) {
+            // the container accepts a query string with a bad percent-escape (?q=50%) that URI rejects: go home
+            return false;
+        }
         return host != null && host.equalsIgnoreCase(current.getServerName());
     }
 }

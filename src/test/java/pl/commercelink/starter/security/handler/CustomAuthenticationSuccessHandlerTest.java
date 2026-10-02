@@ -96,6 +96,31 @@ class CustomAuthenticationSuccessHandlerTest {
         assertThat(response.getRedirectedUrl()).isEqualTo(HOME);
     }
 
+    @Test
+    void redirectsHomeForAMalformedSavedAddress() throws Exception {
+        // given: Tomcat lets a bad percent-escape in the query string through; java.net.URI rejects it
+        save(page("/dashboard/orders?q=50%"));
+
+        // when
+        MockHttpServletResponse response = login();
+
+        // then
+        assertThat(response.getRedirectedUrl()).isEqualTo(HOME);
+        assertThat(session.getAttribute(SAVED_REQUEST)).isNull();
+    }
+
+    @Test
+    void redirectsHomeWhenTheSavedRequestHadNoAcceptHeader() throws Exception {
+        // given
+        save(get("/dashboard/orders/o1"));
+
+        // when
+        MockHttpServletResponse response = login();
+
+        // then
+        assertThat(response.getRedirectedUrl()).isEqualTo(HOME);
+    }
+
     private MockHttpServletRequest get(String uriWithQuery) {
         String[] parts = uriWithQuery.split("\\?", 2);
         MockHttpServletRequest request = new MockHttpServletRequest("GET", parts[0]);
