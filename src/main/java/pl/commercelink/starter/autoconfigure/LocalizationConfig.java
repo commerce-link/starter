@@ -31,6 +31,8 @@ public class LocalizationConfig implements WebMvcConfigurer {
     public LocaleResolver localeResolver() {
         CookieLocaleResolver localeResolver = new CookieLocaleResolver();
         localeResolver.setDefaultLocale(Locale.forLanguageTag(applicationLocale));
+        // The cookie comes from the client: a forged value falls back to the default instead of failing the request
+        localeResolver.setRejectInvalidCookies(false);
         return localeResolver;
     }
 
@@ -38,6 +40,8 @@ public class LocalizationConfig implements WebMvcConfigurer {
     public LocaleChangeInterceptor localeChangeInterceptor() {
         LocaleChangeInterceptor interceptor = new LocaleChangeInterceptor();
         interceptor.setParamName("lang");
+        // Scanners send junk in ?lang=; keep the current locale instead of answering 500
+        interceptor.setIgnoreInvalidLocale(true);
         return interceptor;
     }
 
